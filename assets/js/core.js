@@ -244,8 +244,8 @@
 
   /* ---------- 站点元数据 ---------- */
   XK.SUBJECTS = {
-    math: { key: 'math', name: '数学', cls: 'M', tone: 'var(--math)', desc: '从数位到圆面积，把抽象关系变成可以拖动的图。' },
-    english: { key: 'english', name: '英语', cls: 'E', tone: 'var(--en)', desc: 'PEP 教材里的高频句型与语法，用场景练到能开口。' },
-    chinese: { key: 'chinese', name: '语文', cls: 'C', tone: 'var(--cn)', desc: '读懂句子、抓住重点、把话说清楚，从词句到篇章。' }
+    math: { key: 'math', name: '数学', cls: 'M', tone: 'var(--math)', desc: '高频公式、数量关系和易错题先抓牢；需要理解时再展开互动实验。' },
+    english: { key: 'english', name: '英语', cls: 'E', tone: 'var(--en)', desc: '字母、句型和语法按考点压缩，先记住怎么用，再通过场景练熟。' },
+    chinese: { key: 'chinese', name: '语文', cls: 'C', tone: 'var(--cn)', desc: '拼音、词句、阅读和表达抓主干，易混点用对照和自测快速区分。' }
   };
 })();

@@ -918,6 +918,8 @@
      12. 分数 —— 意义与通分比较
      ========================================================== */
   XK.figure('fraction', function (ctx) {
+    var ST = (ctx.cfg && ctx.cfg.state) || {};
+    var intro = ST.mode === 'intro';
     var svg = stage(ctx.stage, '0 0 480 300', '两条分数条与通分比较');
     var g = s('g'); svg.appendChild(g);
     var b = 2, a = 1, d = 3, c = 2;
@@ -938,6 +940,13 @@
 
     function draw() {
       XK.clear(g);
+      if (intro) {
+        bar(82, a, b, C.blueL, '涂色');
+        g.appendChild(T(240, 220, '平均分成 ' + b + ' 份，取了 ' + a + ' 份', { size: 14, weight: 700, fill: C.ink2 }));
+        g.appendChild(T(240, 250, '分母：' + b + '　分子：' + a, { size: 12, fill: C.mut }));
+        g.appendChild(T(240, 279, '只有平均分，才能用这样的分数表示', { size: 10.5, fill: C.faint }));
+        return;
+      }
       bar(46, a, b, C.blueL, '第一个');
       bar(122, c, d, C.goldL, '第二个');
       var lcm = b * d / gcd(b, d);
@@ -948,6 +957,16 @@
     }
 
     function update() {
+      if (intro) {
+        ctx.set([
+          { k: '分数', v: a + '/' + b, big: true },
+          { k: '表示', v: '平均分成 ' + b + ' 份，取 ' + a + ' 份' },
+          { k: '分母', v: b + '（平均分成多少份）' },
+          { k: '分子', v: a + '（取了多少份）' },
+          { k: '', eq: a === b ? '取了全部，就是整个整体，也等于 1' : '分母相同，分子大的分数大' }
+        ]);
+        return;
+      }
       var lcm = b * d / gcd(b, d);
       var cmp = a * d === c * b ? '相等' : a * d > c * b ? a + '/' + b + ' 更大' : c + '/' + d + ' 更大';
       ctx.set([
@@ -967,14 +986,16 @@
       label: '第一个：分子', min: 1, max: b, value: a,
       oninput: function (v) { a = v; draw(); update(); }
     });
-    var s3 = XK.slider(ctx.controls, {
-      label: '第二个：分母', min: 2, max: 12, value: d,
-      oninput: function (v) { d = v; c = Math.min(c, d); s4.input.max = d; s4.set(c); draw(); update(); }
-    });
-    var s4 = XK.slider(ctx.controls, {
-      label: '第二个：分子', min: 1, max: d, value: c,
-      oninput: function (v) { c = v; draw(); update(); }
-    });
+    if (!intro) {
+      var s3 = XK.slider(ctx.controls, {
+        label: '第二个：分母', min: 2, max: 12, value: d,
+        oninput: function (v) { d = v; c = Math.min(c, d); s4.input.max = d; s4.set(c); draw(); update(); }
+      });
+      var s4 = XK.slider(ctx.controls, {
+        label: '第二个：分子', min: 1, max: d, value: c,
+        oninput: function (v) { c = v; draw(); update(); }
+      });
+    }
 
     draw(); update();
     return function () {};

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   小课桌 · 英语知识点（人教版 PEP，8 个）
+   小课桌 · 英语知识点（低年级启蒙 + PEP，20 个）
    ========================================================================== */
 window.POINTS = (window.POINTS || []).concat([
 
@@ -888,6 +888,345 @@ window.POINTS = (window.POINTS || []).concat([
     { f: '问职业', b: 'What does he do? / What\'s his job?' },
     { f: '问工作地点', b: 'Where does he work? — He works in…' },
     { f: '三单要注意什么？', b: 'does 提问、works 加 s，用了 does 就回原形。' }
+  ]
+},
+
+/* ================================================================== 低年级 */
+{
+  id: 'e1-01', subject: 'english', grade: 1, term: '上', unit: '英语启蒙 · 字母',
+  title: 'A–Z：字母的名字和声音',
+  tags: ['字母', 'alphabet', 'ABC', '自然拼读'],
+  goal: '认识26个英文字母的大小写，知道字母名称和它在单词里常见的发音不是一回事，能按顺序说出A–Z。',
+  memorize: '字母有<b>名字</b>，单词里的字母还有<b>声音</b>；先认形，再听音。',
+  sections: [
+    { h: '大写和小写',
+      p: '每个英文字母都有大写和小写两种写法：A – a，B – b，C – c。句子的第一个字母通常大写，名字的第一个字母也要大写。' },
+    { h: '字母名称不等于发音',
+      table: {
+        head: ['字母', '字母名称大致读法', '在单词里的常见音', '例词'],
+        rows: [
+          ['A a', 'ei', '/æ/', 'apple'],
+          ['B b', 'bi', '/b/', 'ball'],
+          ['C c', 'si', '/k/', 'cat'],
+          ['D d', 'di', '/d/', 'dog']
+        ]
+      },
+      note: { type: 'tip', text: '我们唱字母歌时读的是字母名称；读单词时，要看字母在单词里发什么音。两种读法都很重要。' } },
+    { h: '五个元音字母',
+      p: 'A、E、I、O、U 通常叫元音字母。它们像句子的“小发动机”，很多单词都至少需要它们参与发音。' },
+    { h: '按顺序记住',
+      ol: [
+        '把A–G、H–N、O–T、U–Z分成四小段。',
+        '先听音指字母，再遮住一部分补顺序。',
+        '最后练习从任意一个字母往后接。'
+      ] }
+  ],
+  figure: {
+    type: 'starter', state: { scene: 'alphabet' },
+    title: '翻到任意一个字母',
+    lead: '切换字母，看它的大小写、顺序和例词。',
+    predict: {
+      q: '字母B在单词里的常见声音，和字母名称“bi”一样吗？',
+      options: ['完全一样', '不一样，ball里的B发/b/', 'B没有声音'], answer: 1,
+      why: '“bi”是字母名称；在ball里，B发短促的/b/。'
+    },
+    insight: '认字母要同时会三件事：认<b>形状</b>、说<b>名称</b>、听<b>单词里的音</b>。',
+    frame: '大写（　），小写（　），例词（　）。',
+    hint: '拖到A、E、I、O、U，看看五个元音字母。'
+  },
+  example: {
+    q: '把下面三组字母按A–Z的顺序排好：M、C、K。',
+    steps: ['回忆字母表：A B C D E F G H I J K L M…', 'C最先，K排第二，M排第三。', '检查：C在K前面，K在M前面。'],
+    a: 'C、K、M。'
+  },
+  quiz: [
+    { q: '字母A的小写是：', options: ['a', 'o', 'e'], answer: 0, why: 'A的小写是a。' },
+    { q: '下面哪个字母是元音字母？', options: ['B', 'E', 'D'], answer: 1, why: 'A、E、I、O、U是元音字母。' },
+    { q: '字母顺序中，L后面是：', options: ['K', 'M', 'N'], answer: 1, why: 'A B C D E F G H I J K L M，L后面是M。' }
+  ],
+  cards: [
+    { f: '字母名称和发音一样吗？', b: '不一样。名称用来称呼字母，发音是它在单词里的声音。' },
+    { f: '五个元音字母', b: 'A、E、I、O、U。' },
+    { f: 'D的小写', b: 'd。' }
+  ]
+},
+
+{
+  id: 'e1-02', subject: 'english', grade: 1, term: '下', unit: '英语启蒙 · 打招呼',
+  title: 'Hello! 第一次见面怎么说',
+  tags: ['打招呼', 'hello', 'morning', 'name'],
+  goal: '会用Hello、Hi、Good morning打招呼，会问和回答姓名，并能礼貌地说Goodbye。',
+  memorize: '见面先<b>问候</b>，再<b>说名字</b>；早上用Good morning，离开说Goodbye。',
+  sections: [
+    { h: '不同时间的问候',
+      table: {
+        head: ['时间', '问候', '中文'],
+        rows: [
+          ['早上', 'Good morning.', '早上好。'],
+          ['下午', 'Good afternoon.', '下午好。'],
+          ['晚上', 'Good evening.', '晚上好。'],
+          ['任何时候', 'Hello. / Hi.', '你好。']
+        ]
+      },
+      note: { type: 'tip', text: 'Hi更轻松，常对朋友说；Hello更通用。晚上见面说Good evening，睡前道别说Good night。' } },
+    { h: '问名字和回答',
+      p: '问：<b>What\'s your name?</b> 答：<b>My name is Lily.</b> 也可以简单回答 <b>I\'m Lily.</b> 名字的第一个字母要大写。' },
+    { h: '第一次见面',
+      p: '可以伸出手说 <b>Nice to meet you.</b> 对方回答 <b>Nice to meet you, too.</b> too 前面有逗号，意思是“也”。' },
+    { h: '礼貌离开',
+      p: '离开时说 <b>Goodbye. / Bye.</b> 如果是晚上睡前，说 <b>Good night.</b> 不要把Good night当作晚上见面的问候。' }
+  ],
+  figure: {
+    type: 'starter', state: { scene: 'greetings' },
+    title: '换一个问候场景',
+    lead: '切换早上、下午和第一次见面，读完整对话。',
+    predict: {
+      q: '早上见到老师，哪一句最合适？',
+      options: ['Good morning.', 'Good night.', 'Goodbye.'], answer: 0,
+      why: '早上见面用Good morning；Good night是睡前道别。'
+    },
+    insight: '英语问候要看<b>时间和场合</b>。先选对问候，再介绍自己，对话就自然了。',
+    frame: '（　）！My name is（　）.',
+    hint: '切到睡前场景，注意Good night不是见面问候。'
+  },
+  example: {
+    q: '早上，Amy见到新同学Tom。写一组简单对话。',
+    steps: ['早上先问候：Good morning.', '问名字：What\'s your name?', '回答并礼貌回应：My name is Tom. Nice to meet you.'],
+    a: 'Amy: Good morning. What\'s your name? Tom: My name is Tom. Nice to meet you.'
+  },
+  quiz: [
+    { q: '下午见面说：', options: ['Good morning.', 'Good afternoon.', 'Good night.'], answer: 1, why: 'afternoon表示下午。' },
+    { q: '问对方名字用：', options: ['What\'s your name?', 'How old are you?', 'Where are you?'], answer: 0, why: 'What\'s your name?是“你叫什么名字”。' },
+    { q: '睡前道别可以说：', options: ['Good morning.', 'Good night.', 'Good afternoon.'], answer: 1, why: 'Good night用于晚上道别或睡前。' }
+  ],
+  cards: [
+    { f: '早上好', b: 'Good morning.' },
+    { f: '问名字', b: 'What\'s your name? — My name is…' },
+    { f: '第一次见面', b: 'Nice to meet you.' }
+  ]
+},
+
+{
+  id: 'e2-01', subject: 'english', grade: 2, term: '上', unit: '英语启蒙 · 颜色',
+  title: 'Colours：What colour is it?',
+  tags: ['颜色', 'colour', 'red', 'blue'],
+  goal: '会说出常见颜色，能用What colour is it?询问颜色，并用It\'s + 颜色回答。',
+  memorize: '问颜色：<b>What colour is it?</b> 答颜色：<b>It\'s red.</b>',
+  sections: [
+    { h: '八个常见颜色',
+      table: {
+        head: ['英语', '中文', '例子'],
+        rows: [
+          ['red', '红色', 'a red apple'],
+          ['blue', '蓝色', 'a blue sky'],
+          ['yellow', '黄色', 'a yellow banana'],
+          ['green', '绿色', 'a green leaf'],
+          ['orange', '橙色', 'an orange ball'],
+          ['black', '黑色', 'a black cat'],
+          ['white', '白色', 'white snow'],
+          ['brown', '棕色', 'a brown bear']
+        ]
+      } },
+    { h: '问和答要配套',
+      p: '单数物品问：<b>What colour is it?</b> 答：<b>It\'s red.</b> 多个物品问：<b>What colour are they?</b> 答：<b>They\'re blue.</b>' },
+    { h: '颜色词放在名词前',
+      p: '颜色词像形容词，放在物品前面：a red pen（一支红笔），不是 a pen red。' },
+    { h: 'orange有两个意思',
+      note: { type: 'tip', text: 'orange可以表示“橙色”，也可以表示水果“橙子”。看句子判断：an orange（一个橙子），an orange bag（一个橙色书包）。' } }
+  ],
+  figure: {
+    type: 'starter', state: { scene: 'colors' },
+    title: '点一个颜色，读一句话',
+    lead: '切换颜色，看英文单词和完整问句。',
+    predict: {
+      q: '“一片绿色的叶子”应该怎样表达？',
+      options: ['a green leaf', 'a leaf green', 'green a leaf'], answer: 0,
+      why: '颜色词放在名词前面：green + leaf。'
+    },
+    insight: '颜色回答用 <b>It\'s + colour</b>；颜色修饰物品时，要放在物品名词<b>前面</b>。',
+    frame: 'What colour is it? — It\'s（　）.',
+    hint: '选orange时，想想它既可以是颜色，也可以是橙子。'
+  },
+  example: {
+    q: '看见一个蓝色的书包，用英语问答它的颜色。',
+    steps: ['书包是单数，用is it。', '问：What colour is it?', '答：It\'s blue.'],
+    a: '— What colour is it? — It\'s blue.'
+  },
+  quiz: [
+    { q: '“红色的”是：', options: ['red', 'read', 'rain'], answer: 0, why: 'red表示红色。' },
+    { q: 'What colour ___ it?', options: ['is', 'are', 'am'], answer: 0, why: 'it是单数，be动词用is。' },
+    { q: '“一个黄色的苹果”是：', options: ['a apple yellow', 'a yellow apple', 'yellow a apple'], answer: 1, why: '颜色词放在名词前，冠词a也放在最前。' }
+  ],
+  cards: [
+    { f: '问颜色', b: 'What colour is it?' },
+    { f: '回答颜色', b: 'It\'s + 颜色。' },
+    { f: '颜色词放哪里？', b: '放在名词前面。' }
+  ]
+},
+
+{
+  id: 'e2-02', subject: 'english', grade: 2, term: '下', unit: '英语启蒙 · 家人',
+  title: 'My family：Who\'s she?',
+  tags: ['家人', 'family', 'he', 'she'],
+  goal: '会用father、mother等家庭称呼介绍家人，能区分he和she，并用Who\'s he/she?提问。',
+  memorize: '男生用<b>he</b>，女生用<b>she</b>；问是谁说<b>Who\'s he/she?</b>',
+  sections: [
+    { h: '家庭称呼',
+      table: {
+        head: ['英语', '中文', '代词'],
+        rows: [
+          ['father / dad', '爸爸', 'he'],
+          ['mother / mum', '妈妈', 'she'],
+          ['brother', '兄弟', 'he'],
+          ['sister', '姐妹', 'she'],
+          ['grandfather', '爷爷/外公', 'he'],
+          ['grandmother', '奶奶/外婆', 'she']
+        ]
+      } },
+    { h: '介绍家人',
+      p: '介绍女性：<b>She\'s my mother.</b> 介绍男性：<b>He\'s my father.</b> He\'s = He is，She\'s = She is。' },
+    { h: 'Who\'s who',
+      p: '<b>Who\'s she?</b> 问照片里的女性是谁；<b>Who\'s he?</b> 问男性是谁。回答都用“代词 + \'s + my + 家庭称呼”。' },
+    { h: 'my表示“我的”',
+      note: { type: 'warn', text: 'my后面要接名词：my mother、my brother。不能说“She\'s my.”；要完整说“She\'s my mother.”' } }
+  ],
+  figure: {
+    type: 'starter', state: { scene: 'family' },
+    title: '照片里是谁',
+    lead: '切换家人，看称呼与he/she怎样对应。',
+    predict: {
+      q: '介绍妈妈时，应该用he还是she？',
+      options: ['he', 'she', 'it'], answer: 1,
+      why: '妈妈是女性，用she。'
+    },
+    insight: '家庭称呼要和人称代词一起练：<b>father → he</b>，<b>mother → she</b>。',
+    frame: 'Who\'s she? — She\'s my（　）.',
+    hint: '切到brother，注意代词要变成he。'
+  },
+  example: {
+    q: '介绍全家福里的妈妈和哥哥。',
+    steps: ['妈妈是女性：She\'s my mother.', '哥哥是男性：He\'s my brother.', '两个句子都要有my和家庭称呼。'],
+    a: 'She\'s my mother. He\'s my brother.'
+  },
+  quiz: [
+    { q: '“她”用哪个词？', options: ['he', 'she', 'it'], answer: 1, why: 'she表示“她”。' },
+    { q: 'Who\'s ___? — He\'s my father.', options: ['she', 'he', 'it'], answer: 1, why: '回答用he，所以问句也用Who\'s he?' },
+    { q: '“她是我的妈妈。”是：', options: ['She\'s my mother.', 'He\'s my mother.', 'She my mother.'], answer: 0, why: '女性用she，my mother完整表达“我的妈妈”。' }
+  ],
+  cards: [
+    { f: 'he和she怎么选？', b: '男性用he，女性用she。' },
+    { f: '问“她是谁”', b: 'Who\'s she?' },
+    { f: '介绍爸爸', b: 'He\'s my father / dad.' }
+  ]
+},
+
+{
+  id: 'e3-01', subject: 'english', grade: 3, term: '上', unit: 'PEP Unit 6 · 数字',
+  title: 'Numbers：How many? 1–20',
+  tags: ['数字', 'How many', 'eleven', 'twenty'],
+  goal: '会读写1–20的数字，能用How many…?询问数量，并根据物品单复数回答。',
+  memorize: '问数量：<b>How many + 复数名词?</b> 数完再答，单个物品也要说完整句子。',
+  sections: [
+    { h: '1–20的规律',
+      table: {
+        head: ['数字', '英语', '记忆点'],
+        rows: [
+          ['1–10', 'one, two, three, four, five, six, seven, eight, nine, ten', '逐个记'],
+          ['11–12', 'eleven, twelve', '不是ten-one、ten-two'],
+          ['13–19', 'thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, nineteen', '大多在个位数后加-teen'],
+          ['20', 'twenty', '整十词']
+        ]
+      },
+      note: { type: 'warn', text: '容易拼错：three不是thre，eight有gh，fifteen不是fiveteen，twenty不是twoty。' } },
+    { h: '问数量',
+      p: '<b>How many books?</b> 一本书：<b>One book.</b> 两本书：<b>Two books.</b> 问句里通常用复数，数量是1时回答用单数。' },
+    { h: '完整回答更稳',
+      p: '课堂里可以简短回答“Three.”，但完整句能练语法：<b>There are three birds.</b> 或 <b>I can see three birds.</b>' },
+    { h: '数字后面看名词',
+      note: { type: 'tip', text: 'one后面接单数：one apple；two及以上通常接复数：two apples。不可数名词例外，低年级先掌握可数物品。' } }
+  ],
+  figure: {
+    type: 'starter', state: { scene: 'count' },
+    title: '数一数，再回答',
+    lead: '改变小球数量，看How many问句和英文数字。',
+    predict: {
+      q: 'How many balls? 图中有12个球，应该回答：',
+      options: ['Twelve.', 'Twelfth.', 'Two-ten.'], answer: 0,
+      why: '12是twelve，数量回答不需要序数词。'
+    },
+    insight: '问 <b>How many</b> 时，先逐个数清楚，再把数量换成英文；答句里的物品名词要和数量匹配。',
+    frame: 'How many balls? — （　）balls.',
+    hint: '数到13、15和20，留意它们特殊拼写。'
+  },
+  example: {
+    q: '书包里有4支铅笔。用How many问，并回答。',
+    steps: ['铅笔是可数名词，复数pencils。', '问：How many pencils?', '4是four，回答：Four pencils.'],
+    a: '— How many pencils? — Four pencils.'
+  },
+  quiz: [
+    { q: '12用英语说是：', options: ['twelve', 'twenty', 'twelfth'], answer: 0, why: '12是twelve。' },
+    { q: 'How many ___?', options: ['book', 'books', 'a book'], answer: 1, why: 'How many后通常接复数名词books。' },
+    { q: '15的英语是：', options: ['fiveteen', 'fifty', 'fifteen'], answer: 2, why: '15写作fifteen。' }
+  ],
+  cards: [
+    { f: '12', b: 'twelve。' },
+    { f: '问数量', b: 'How many + 复数名词?' },
+    { f: '20', b: 'twenty。' }
+  ]
+},
+
+{
+  id: 'e3-02', subject: 'english', grade: 3, term: '下', unit: 'PEP · 单数与复数',
+  title: 'One apple, two apples：单数变复数',
+  tags: ['复数', 'plural', 'a', 'an', 'these'],
+  goal: '能区分单数和一个、多个，会正确使用a/an，并掌握常见名词加-s、-es变复数的规则。',
+  memorize: '一个用<b>a/an + 单数</b>，多个用<b>名词复数</b>；元音音素开头用an。',
+  sections: [
+    { h: '单数和复数',
+      p: '一个物品是单数：a book；两个或更多通常用复数：two books、three apples。数量改变，后面的名词也要跟着变。' },
+    { h: 'a还是an',
+      p: '看后面单词的<b>第一个音</b>，不是第一个字母。辅音音素前用a：a book、a dog；元音音素前用an：an apple、an orange。' },
+    { h: '复数怎么加',
+      table: {
+        head: ['情况', '变法', '例子'],
+        rows: [
+          ['一般名词', '加-s', 'book → books'],
+          ['s、x、ch、sh结尾', '加-es', 'box → boxes，watch → watches'],
+          ['辅音字母+y结尾', '变y为i加-es', 'baby → babies'],
+          ['不规则', '单独记', 'child → children，man → men']
+        ]
+      },
+      note: { type: 'tip', text: '低年级先掌握最常用的加-s和加-es，不规则复数遇到一个记一个。' } },
+    { h: 'this和these',
+      p: '近处一个用 <b>this</b>：This is an apple. 近处多个用 <b>these</b>：These are apples. be动词也跟着从is变成are。' }
+  ],
+  figure: {
+    type: 'wordform', state: { mode: 'plural' },
+    title: '一个变多个',
+    lead: '切换例词，看单数怎样变成复数，以及特殊变化。',
+    predict: {
+      q: 'two ___（apple）应该怎样写？',
+      options: ['apple', 'apples', 'an apples'], answer: 1,
+      why: 'two表示两个，名词用复数apples；复数前不再加an。'
+    },
+    insight: '数量、冠词和名词要一起检查：<b>一个用a/an + 单数，两个以上用复数</b>。',
+    frame: '一个（　），两个（　）。',
+    hint: '找到box和watch，看看-go、-ch结尾怎样加。'
+  },
+  example: {
+    q: '把“这是书。这些是书。”翻译成英语。',
+    steps: ['近处一个书：This is a book.', '近处多个书：These are books.', 'this变these，is变are，book变books。'],
+    a: 'This is a book. These are books.'
+  },
+  quiz: [
+    { q: '一个苹果是：', options: ['a apple', 'an apple', 'apples apple'], answer: 1, why: 'apple以元音音素开头，用an apple。' },
+    { q: 'box的复数是：', options: ['boxs', 'boxes', 'boxies'], answer: 1, why: '以x结尾加-es：boxes。' },
+    { q: '“这些是书。”是：', options: ['This is books.', 'These are books.', 'These is a book.'], answer: 1, why: 'these表示多个，be动词用are，名词用books。' }
+  ],
+  cards: [
+    { f: 'a还是an？', b: '看后面的第一个音：a book，an apple。' },
+    { f: 'box的复数', b: 'boxes，加-es。' },
+    { f: 'these后面动词？', b: 'These are + 复数名词。' }
   ]
 }
 

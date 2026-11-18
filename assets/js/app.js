@@ -20,6 +20,7 @@
   var destroyFigure = null;
   var spy = null;
   var pushTimer = null;
+  var challengeTimer = null;
 
   /* 皮肤：卡片手账样式为全站默认。
      保留一个回退开关：?skin=classic 可临时切到旧版做对比，不影响正常访问。
@@ -30,9 +31,33 @@
   var cloudStatusEl = null;
   var syncState = { busy: false, note: '', bad: false, freshCode: null };
 
-  POINTS.sort(function (a, b) {
-    return (ORDER[a.subject] - ORDER[b.subject]) || (a.grade - b.grade) || a.id.localeCompare(b.id);
-  });
+  var CN_NUM = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
+  function cnNumber(str) {
+    if (CN_NUM[str]) return CN_NUM[str];
+    if (/^[一二三四五六七八九]?十[一二三四五六七八九]?$/.test(str)) {
+      var parts = str.split('十');
+      return (parts[0] ? CN_NUM[parts[0]] : 1) * 10 + (parts[1] ? CN_NUM[parts[1]] : 0);
+    }
+    return 9999;
+  }
+  function unitOrder(p) {
+    var unit = String(p.unit || '');
+    var m = unit.match(/Unit\s*(\d+)/i);
+    if (m) return Number(m[1]);
+    m = unit.match(/第([一二三四五六七八九十]+)单元/);
+    return m ? cnNumber(m[1]) : 9999;
+  }
+  function termOrder(p) {
+    return p.term === '上' ? 0 : p.term === '下' ? 1 : 2;
+  }
+  function pointOrder(a, b) {
+    return (ORDER[a.subject] - ORDER[b.subject]) ||
+      (a.grade - b.grade) ||
+      (termOrder(a) - termOrder(b)) ||
+      (unitOrder(a) - unitOrder(b)) ||
+      a.id.localeCompare(b.id);
+  }
+  POINTS.sort(pointOrder);
   var BY_ID = {};
   POINTS.forEach(function (p) { BY_ID[p.id] = p; });
 
@@ -380,6 +405,43 @@
   function gradeLabel(g, term) {
     return ['', '一', '二', '三', '四', '五', '六'][g] + '年级' + (term ? '（' + term + '）' : '');
   }
+  function plainText(html) {
+    var d = document.createElement('div');
+    d.innerHTML = html || '';
+    return (d.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+  function clipText(text, n) {
+    var s = plainText(text);
+    return s.length > n ? s.slice(0, n - 1) + '…' : s;
+  }
+  function memoryOf(p) {
+    return p.memorize || (p.figure && p.figure.insight) || p.goal;
+  }
+  function trapOf(p) {
+    var found = null;
+    (p.sections || []).some(function (sec) {
+      if (sec.note && sec.note.type === 'warn') { found = sec.note.text; return true; }
+      return false;
+    });
+    if (!found) {
+      (p.sections || []).some(function (sec) {
+        if (sec.note && sec.note.text) { found = sec.note.text; return true; }
+        return false;
+      });
+    }
+    return found || '先合上书，用自己的话复述结论，再回到题目检查。';
+  }
+  function sectionBrief(sec) {
+    if (sec.p) return clipText(sec.p, 56);
+    if (sec.ol && sec.ol.length) return clipText(sec.ol[0], 56);
+    if (sec.ul && sec.ul.length) return clipText(sec.ul[0], 56);
+    if (sec.table && sec.table.rows && sec.table.rows.length) {
+      return sec.table.rows.slice(0, 2).map(function (row) {
+        return row.slice(0, 2).map(plainText).join('：');
+      }).join('；');
+    }
+    return '';
+  }
   function subOf(p) { return SUBJECTS[p.subject]; }
   function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
   function orderIn(sub) {
@@ -416,23 +478,40 @@
     // hero
     var hero = h('section', { class: 'hero' });
     var left = h('div');
-    left.appendChild(h('div', { class: 'tag', style: 'display:inline-block;margin-bottom:14px;background:#fff;border-color:#e0d8c8' }, '人教版 · 河南信阳 · 4-6 年级'));
-    left.appendChild(h('h1', { html: '每个知识点，<br>都能<em>动手试一次</em>。' }));
+    left.appendChild(h('div', { class: 'tag', style: 'display:inline-block;margin-bottom:14px;background:#fff;border-color:#e0d8c8' }, '小学考试速记 · 高频考点 · 可打印'));
+    left.appendChild(h('h1', { html: '考前十分钟，<br>先把知识结构<em>看清</em>。' }));
     left.appendChild(h('p', {
       class: 'lead',
-      html: '先猜一猜结果，再拖动滑块看变化，最后用自己的话解释。数学 15 个、英语 21 个、语文 7 个核心知识点，外加 13 张可打印的一页纸总结。'
+      html: '不塞整本教材，只留考试最常查的结论、知识骨架和易错点。适合考前复盘、错题回看，也能按年级打印成 A4 复习文档。'
     }));
     var tags = h('div', { class: 'hero-tags' });
-    ['先预测', '再操作', '后解释', '自测 3 题', '自动记录进度'].forEach(function (t) {
+    ['一句必背', '知识骨架', '易错提醒', '3 题速练', 'A4 打印'].forEach(function (t) {
       tags.appendChild(h('span', { class: 'tag' }, t));
     });
     left.appendChild(tags);
+    var actions = h('div', { class: 'hero-actions' });
+    actions.appendChild(h('a', { class: 'btn hero-primary', href: '#/pack' }, '生成打印复习包 →'));
+    actions.appendChild(h('a', { class: 'btn ghost', href: '#/cheat' }, '先看一页纸速记'));
+    left.appendChild(actions);
     hero.appendChild(left);
 
     var art = h('div', { class: 'hero-art' });
     art.innerHTML = heroArt();
     hero.appendChild(art);
     frag.appendChild(hero);
+
+    var packTeaser = h('a', { class: 'home-pack-strip', href: '#/pack' });
+    var packCopy = h('div');
+    packCopy.appendChild(h('span', {}, '考试当天带这一份'));
+    packCopy.appendChild(h('b', {}, '选年级和学科，自动生成醒目、分层的 A4 考前速记'));
+    packCopy.appendChild(h('p', {}, '必背结论 + 知识骨架 + 易错提醒 + 速练题，一册一个文档。'));
+    packTeaser.appendChild(packCopy);
+    var packStats = h('div', { class: 'home-pack-stats' });
+    packStats.appendChild(h('span', {}, SHEETS.length + ' 张专题速记'));
+    packStats.appendChild(h('span', {}, '1–6 年级'));
+    packStats.appendChild(h('span', {}, '直接打印'));
+    packTeaser.appendChild(packStats);
+    frag.appendChild(packTeaser);
 
     // 科目卡
     var grid = h('div', { class: 'subject-grid' });
@@ -460,6 +539,33 @@
       grid.appendChild(card);
     });
     frag.appendChild(grid);
+
+    // 年级导航：不预设地区、教材进度，让 1-6 年级都能直接找到入口
+    var gradeHead = h('div', { class: 'sec-head', style: 'margin-top:38px' },
+      h('h2', {}, '按年级找'),
+      h('p', {}, '每个年级都能直接进入三科对应内容')
+    );
+    frag.appendChild(gradeHead);
+    var gradeGrid = h('div', { class: 'grade-grid' });
+    [1, 2, 3, 4, 5, 6].forEach(function (g) {
+      var subjects = ['math', 'english', 'chinese'];
+      var count = POINTS.filter(function (p) { return p.grade === g; }).length;
+      var card = h('div', { class: 'pcard grade-card' });
+      var top = h('div', { class: 'pcard-top' });
+      top.appendChild(h('span', { class: 'badge', style: 'background:var(--paper-2);color:var(--ink-2)' }, gradeLabel(g)));
+      top.appendChild(h('span', { class: 'term', style: 'margin-left:auto' }, count + ' 个'));
+      card.appendChild(top);
+      card.appendChild(h('h3', {}, '先看这个年级'));
+      var links = h('div', { class: 'grade-links' });
+      subjects.forEach(function (key) {
+        var n = POINTS.filter(function (p) { return p.grade === g && p.subject === key; }).length;
+        links.appendChild(h('a', { class: 'grade-link lg-' + key, href: '#/' + key + '/' + g },
+          h('span', {}, SUBJECTS[key].name), h('b', {}, n)));
+      });
+      card.appendChild(links);
+      gradeGrid.appendChild(card);
+    });
+    frag.appendChild(gradeGrid);
 
     // 进度带
     var band = h('section', { class: 'progress-band' });
@@ -490,11 +596,11 @@
     frag.appendChild(recHead);
     frag.appendChild(pointGrid(pickRecommend(), true));
 
-    // 一页纸总结
+    // 一页纸速记
     if (SHEETS.length) {
       var ch = h('div', { class: 'sec-head', style: 'margin-top:38px' },
-        h('h2', {}, '一页纸总结'),
-        h('p', {}, '考前 10 分钟翻的那种'),
+        h('h2', {}, '一页纸速记'),
+        h('p', {}, '考前最后扫一遍的结构表'),
         h('a', { class: 'more', href: '#/cheat' }, '全部 ' + SHEETS.length + ' 张 →')
       );
       frag.appendChild(ch);
@@ -526,7 +632,7 @@
   }
 
   function pickRecommend() {
-    var byId = ['m4-01', 'm4-06', 'm5-08', 'e4-01', 'g5-04', 'g6-06'];
+    var byId = ['m1-02', 'm2-01', 'm3-01', 'e1-02', 'e2-01', 'g5-04'];
     var out = byId.map(function (id) { return BY_ID[id]; }).filter(Boolean);
     if (out.length < 6) {
       POINTS.forEach(function (p) { if (out.length < 6 && out.indexOf(p) < 0) out.push(p); });
@@ -554,23 +660,30 @@
   }
 
   /* ---------- 列表页 ---------- */
-  var listState = { grade: 'all', q: '' };
+  var listState = { subject: null, grade: 'all', q: '' };
 
   function viewList(subject, grade) {
     var meta = SUBJECTS[subject];
     if (!meta) return viewHome();
+    // 切换学科时清空上一科的筛选词，避免从“数学搜索”进入英语后出现空列表
+    if (listState.subject !== subject) {
+      listState.grade = 'all';
+      listState.q = '';
+    }
     if (grade) listState.grade = String(grade);
+    listState.subject = subject;
 
     var head = h('div', { class: 'point-head' });
-    head.appendChild(h('div', { class: 'kicker' }, meta.name + ' · 人教版'));
-    head.appendChild(h('h1', {}, meta.name + '知识点'));
+    head.appendChild(h('div', { class: 'kicker' }, meta.name + ' · 高频考点速记'));
+    head.appendChild(h('h1', {}, meta.name + '知识速记'));
     head.appendChild(h('p', { style: 'color:var(--muted);max-width:60ch' }, meta.desc));
     main.innerHTML = '';
     main.appendChild(head);
 
     var filters = h('div', { class: 'filters' });
     var chips = h('div', { class: 'filters', style: 'margin:0;gap:6px' });
-    [['all', '全部年级'], ['4', '四年级'], ['5', '五年级'], ['6', '六年级']].forEach(function (g) {
+    [['all', '全部年级'], ['1', '一年级'], ['2', '二年级'], ['3', '三年级'],
+      ['4', '四年级'], ['5', '五年级'], ['6', '六年级']].forEach(function (g) {
       var b = h('button', {
         class: 'chip ' + meta.cls.toLowerCase(), type: 'button',
         'aria-pressed': String(listState.grade === g[0])
@@ -582,10 +695,15 @@
       chips.appendChild(b);
     });
     filters.appendChild(chips);
+    filters.appendChild(h('span', {
+      class: 'sort-hint'
+    }, subject === 'english'
+      ? '按学期 → Unit 编号；语法专题排在同学期单元后'
+      : '按学期 → Unit / 单元编号排序'));
 
     var search = h('label', { class: 'search' });
     search.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
-    var input = h('input', { type: 'search', placeholder: '搜知识点，如“通分”“there be”', value: listState.q, 'aria-label': '搜索知识点' });
+    var input = h('input', { type: 'search', placeholder: '搜知识点，如“拼音”“乘法”“there be”', value: listState.q, 'aria-label': '搜索知识点' });
     input.addEventListener('input', function () {
       listState.q = input.value.trim();
       renderGrid();
@@ -627,7 +745,10 @@
       var card = h('a', { class: 'pcard s-' + meta.cls, href: '#/p/' + p.id });
       var top = h('div', { class: 'pcard-top' });
       top.appendChild(h('span', { class: 'badge' }, meta.name));
-      top.appendChild(h('span', { class: 'term', style: 'font-size:11.5px;color:var(--faint);margin-left:auto' }, p.grade + ' 年级 · ' + p.unit));
+      top.appendChild(h('span', {
+        class: 'term',
+        style: 'font-size:11.5px;color:var(--faint);margin-left:auto'
+      }, gradeLabel(p.grade, p.term) + ' · ' + p.unit));
       card.appendChild(top);
       card.appendChild(h('h3', {}, p.title));
       card.appendChild(h('p', { class: 'goal' }, p.goal));
@@ -637,11 +758,93 @@
       } else {
         foot.appendChild(h('span', {}, '约 10 分钟'));
       }
-      foot.appendChild(h('span', { style: 'margin-left:auto' }, '动手实验 →'));
+      foot.appendChild(h('span', { style: 'margin-left:auto' }, '打开速记卡 →'));
       card.appendChild(foot);
       grid.appendChild(card);
     });
     return grid;
+  }
+
+  function buildPointSnapshot(p, detail) {
+    var meta = subOf(p);
+    var box = h('section', { class: 'cram-snapshot', 'data-subject': p.subject });
+    var top = h('div', { class: 'cram-snapshot-top' });
+    top.appendChild(h('span', { class: 'cram-label' }, '考试速记卡'));
+    top.appendChild(h('b', {}, '先抓结构，再看细节'));
+    var challengeClock = h('span', { class: 'cram-time' }, '考前 3 分钟');
+    top.appendChild(challengeClock);
+    box.appendChild(top);
+
+    var mapHead = h('div', { class: 'cram-head', id: 'cram-map' });
+    mapHead.appendChild(h('span', {}, '01'));
+    mapHead.appendChild(h('b', {}, '这一考点怎么拆'));
+    box.appendChild(mapHead);
+    var map = h('ol', { class: 'cram-map' });
+    (p.sections || []).slice(0, 5).forEach(function (sec) {
+      var li = h('li');
+      li.appendChild(h('b', {}, sec.h || '核心内容'));
+      var brief = sectionBrief(sec);
+      if (brief) li.appendChild(h('span', {}, brief));
+      map.appendChild(li);
+    });
+    box.appendChild(map);
+
+    var trap = h('div', { class: 'cram-trap', id: 'cram-trap' });
+    trap.appendChild(h('span', { class: 'cram-trap-tag' }, '最容易错'));
+    trap.appendChild(h('p', { html: trapOf(p) }));
+    box.appendChild(trap);
+
+    var actions = h('div', { class: 'cram-actions no-print' });
+    var challengeBtn = h('button', { class: 'btn sm', type: 'button' }, '开始 3 分钟挑战');
+    var challengeLeft = 180;
+    challengeBtn.addEventListener('click', function () {
+      if (challengeTimer) clearInterval(challengeTimer);
+      challengeLeft = 180;
+      box.classList.remove('challenge-done');
+      box.classList.add('challenge-on');
+      challengeBtn.textContent = '挑战进行中…';
+      challengeBtn.disabled = true;
+      function paint() {
+        var m = Math.floor(challengeLeft / 60);
+        var s = challengeLeft % 60;
+        challengeClock.textContent = '剩余 ' + m + ':' + (s < 10 ? '0' : '') + s;
+      }
+      paint();
+      challengeTimer = setInterval(function () {
+        challengeLeft--;
+        paint();
+        if (challengeLeft <= 0) {
+          clearInterval(challengeTimer);
+          challengeTimer = null;
+          box.classList.remove('challenge-on');
+          box.classList.add('challenge-done');
+          challengeClock.textContent = '时间到，去做 3 题';
+          challengeBtn.disabled = false;
+          challengeBtn.textContent = '再来一轮';
+        }
+      }, 1000);
+    });
+    actions.appendChild(challengeBtn);
+    var detailBtn = h('button', { class: 'btn sm', type: 'button' }, '展开完整讲解');
+    detailBtn.setAttribute('aria-expanded', 'false');
+    detailBtn.setAttribute('aria-controls', 'point-detail');
+    detailBtn.addEventListener('click', function () {
+      var open = detail.hidden;
+      detail.hidden = !open;
+      detailBtn.textContent = open ? '收起完整讲解' : '展开完整讲解';
+      detailBtn.setAttribute('aria-expanded', String(open));
+      if (open) detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    actions.appendChild(detailBtn);
+
+    var printBtn = h('button', { class: 'btn sm ghost', type: 'button' }, '打印本页速记卡');
+    printBtn.addEventListener('click', function () { window.print(); });
+    actions.appendChild(printBtn);
+    actions.appendChild(h('a', { class: 'btn sm ghost', href: '#/pack/' + p.subject + '/' + p.grade }, '整册打印复习包 →'));
+    box.appendChild(actions);
+    box.appendChild(h('p', { class: 'cram-note no-print' },
+      meta.name + ' · ' + gradeLabel(p.grade, p.term) + ' · 先背一句、再扫骨架，最后做下方 3 题。'));
+    return box;
   }
 
   /* ---------- 详情页 ---------- */
@@ -667,7 +870,7 @@
     head.appendChild(h('div', { class: 'kicker' }, p.unit + ' · ' + gradeLabel(p.grade, p.term)));
     head.appendChild(h('h1', {}, p.title));
     var goal = h('div', { class: 'goalbox' });
-    goal.appendChild(h('b', {}, '学完能做到'));
+    goal.appendChild(h('b', {}, '复习目标'));
     goal.appendChild(h('p', {}, p.goal));
     head.appendChild(goal);
     article.appendChild(head);
@@ -679,10 +882,15 @@
     var memo = p.memorize || (p.figure && p.figure.insight);
     if (memo) {
       var kn = h('div', { class: 'keynote' });
+      kn.id = 'cram-must';
       kn.appendChild(h('div', { class: 'keynote-tag' }, '★ 记住这一句'));
       kn.appendChild(h('div', { class: 'keynote-txt', html: memo }));
       article.appendChild(kn);
     }
+
+    var detail = h('div', { class: 'point-detail', id: 'point-detail', hidden: 'hidden' });
+    article.appendChild(buildPointSnapshot(p, detail));
+    article.appendChild(detail);
 
     // 正文
     var prose = h('div', { class: 'prose body-prose' });
@@ -729,10 +937,10 @@
       }
       prose.appendChild(card);
     });
-    article.appendChild(prose);
+    detail.appendChild(prose);
 
     // 互动实验
-    if (p.figure) article.appendChild(buildLab(p));
+    if (p.figure) detail.appendChild(buildLab(p));
 
     // 例题
     if (p.example) {
@@ -747,11 +955,11 @@
       }
       box.appendChild(h('div', { class: 'ex-a', html: '<b>答：</b>' + p.example.a }));
       ex.appendChild(box);
-      article.appendChild(ex);
+      detail.appendChild(ex);
     }
 
     // 自测
-    if (p.quiz && p.quiz.length) article.appendChild(buildQuiz(p));
+    var quizEl = p.quiz && p.quiz.length ? buildQuiz(p) : null;
 
     // 复习卡
     if (p.cards && p.cards.length) {
@@ -772,8 +980,10 @@
         cards.appendChild(b);
       });
       sec.appendChild(cards);
-      article.appendChild(sec);
+      detail.appendChild(sec);
     }
+
+    if (quizEl) article.appendChild(quizEl);
 
     // 上一节 / 下一节
     var pn = prevNext(p);
@@ -793,27 +1003,39 @@
     // 侧栏
     var toc = h('div', { class: 'toc' });
     var tocItems = [];
-    (p.sections || []).forEach(function (sec, i) {
-      if (!sec.h) return;
-      var a = h('a', { href: '#sec-' + i }, sec.h);
+    [
+      ['cram-must', '必背结论'],
+      ['cram-map', '知识骨架'],
+      ['cram-trap', '易错提醒'],
+      ['quiz', '3 题自测']
+    ].forEach(function (t) {
+      if (t[0] === 'quiz' && !(p.quiz && p.quiz.length)) return;
+      var a = h('a', { href: '#' + t[0] }, t[1]);
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var target = document.getElementById(t[0]);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       toc.appendChild(a);
-      tocItems.push({ a: a, id: 'sec-' + i });
+      tocItems.push({ a: a, id: t[0] });
     });
-    if (p.figure) {
-      var a2 = h('a', { href: '#lab' }, '🔬 动手实验');
-      toc.appendChild(a2); tocItems.push({ a: a2, id: 'lab' });
-    }
-    if (p.example) {
-      var a3 = h('a', { href: '#ex' }, '例题精讲');
-      toc.appendChild(a3); tocItems.push({ a: a3, id: 'ex' });
-    }
-    if (p.quiz) {
-      var a4 = h('a', { href: '#quiz' }, '自测 3 题');
-      toc.appendChild(a4); tocItems.push({ a: a4, id: 'quiz' });
-    }
     var c1 = h('div', { class: 'side-card' });
-    c1.appendChild(h('h4', {}, '本页目录'));
+    c1.appendChild(h('h4', {}, '速记导航'));
     c1.appendChild(toc);
+    var expandSide = h('button', {
+      class: 'btn sm ghost', type: 'button',
+      style: 'width:100%;margin-top:10px'
+    }, '看完整讲解与实验');
+    expandSide.addEventListener('click', function () {
+      detail.hidden = false;
+      var b = article.querySelector('.cram-actions .btn');
+      if (b) {
+        b.textContent = '收起完整讲解';
+        b.setAttribute('aria-expanded', 'true');
+      }
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    c1.appendChild(expandSide);
     side.appendChild(c1);
 
     var c2 = h('div', { class: 'side-card' });
@@ -1412,11 +1634,12 @@
     main.innerHTML = '';
     var doc = h('div', { class: 'doc' });
     doc.appendChild(h('div', { class: 'kicker', style: 'font-size:13px;color:var(--muted)' }, '关于本站'));
-    doc.appendChild(h('h1', {}, '小课桌：给人教版 4-6 年级的一个自主复习站'));
-    doc.appendChild(h('p', {}, '这个站点的目标很单一：让孩子在没有大人讲解的时候，也能把一个知识点弄明白，并且知道自己到底有没有弄明白。所以每个知识点都由固定的三段组成。'));
+    doc.appendChild(h('h1', {}, '小课桌：小学 1-6 年级考试速记与复习站'));
+    doc.appendChild(h('p', {}, '目标不是把整本教材搬上网页，而是把考试最常查的结论、知识结构、易错点和速练题整理清楚，让孩子考前能快速复盘，也能打印成一份真正会翻的复习文档。'));
 
-    doc.appendChild(h('h2', {}, '三段式：预测 → 操作 → 解释'));
-    doc.appendChild(h('p', { html: '<b>先预测</b>：动手之前必须先选一个答案，猜错也没关系，猜错反而更容易记住。<b>再操作</b>：每个知识点只有一个可以改变的条件（滑块、按钮或拖拽），右边的读数会立刻跟着变。<b>后解释</b>：实验下方给出结论和一句"试着说"，要求孩子用自己的话把因果关系说出来。' }));
+    doc.appendChild(h('h2', {}, '速记优先，理解可选'));
+    doc.appendChild(h('p', { html: '<b>先背一句</b>：把最关键的结论放在页面最上方；<b>再看骨架</b>：用编号列出这个考点怎么拆；<b>再圈易错</b>：只保留最容易混的地方；<b>最后自测</b>：3 道题查漏。完整讲解和互动实验收在可选展开区，需要理解时再打开。' }));
+    doc.appendChild(h('p', { html: '进入「速记打印」后，可以按学科和年级生成 <b>A4 复习包</b>：每个考点压缩成半页左右的速记卡，自动包含必背结论、知识骨架、易错提醒和速练题。' }));
     doc.appendChild(h('div', { class: 'callout tip' },
       h('span', { class: 'ico' }, '✓'),
       h('p', { html: '这套结构来自公开的 <b>Teachable Figures</b> 教学图设计方法（ywEdAi，代码 MIT、文字内容 CC BY 4.0），本站按其规则重写了全部图文与代码。' })
@@ -1424,10 +1647,10 @@
 
     doc.appendChild(h('h2', {}, '教材依据与版本'));
     doc.appendChild(h('ul', {},
-      h('li', { html: '数学：人教版（PEP 小学英语同步的人教版数学），按单元顺序整理，覆盖四上至六上高频易错点。' }),
-      h('li', { html: '英语：人教版 PEP（三年级起点）四至六年级句型与词汇。' }),
-      h('li', { html: '语文：按人教版 4-6 年级读写要求整理，覆盖词句、标点、病句、修辞与阅读方法。' }),
-      h('li', { html: '河南信阳各区县、各学校进度可能略有差异，<b>以学校课本和老师要求为准</b>。' })
+      h('li', { html: '数学：按小学 1-6 年级知识顺序整理，低年级重数的认识与运算，高年级重几何、分数和百分数。' }),
+      h('li', { html: '英语：低年级覆盖字母、问候、颜色、家人与数字，中高年级衔接 PEP 核心句型和语法。' }),
+      h('li', { html: '语文：从拼音、识字、词句起步，逐步进入标点、段落、修辞、阅读与概括。' }),
+      h('li', { html: '各地教材版本和教学进度可能略有差异，<b>以学校课本和老师要求为准</b>。' })
     ));
 
     doc.appendChild(h('h2', {}, '多人使用：每个孩子一个档案'));
@@ -1455,14 +1678,14 @@
     setActive('about');
   }
 
-  /* ---------- 一页纸总结 ---------- */
+  /* ---------- 一页纸速记 ---------- */
   function sheetGrid(list) {
     var grid = h('div', { class: 'list-grid' });
     list.forEach(function (sh) {
       var meta = SUBJECTS[sh.subject];
       var card = h('a', { class: 'pcard s-' + meta.cls, href: '#/cheat/' + sh.id });
       var top = h('div', { class: 'pcard-top' });
-      top.appendChild(h('span', { class: 'badge' }, meta.name + ' · 总结'));
+      top.appendChild(h('span', { class: 'badge' }, meta.name + ' · 速记'));
       top.appendChild(h('span', { style: 'margin-left:auto;font-size:11.5px;color:var(--faint)' }, '可打印'));
       card.appendChild(top);
       card.appendChild(h('h3', {}, sh.title));
@@ -1479,15 +1702,21 @@
   function viewCheatHub() {
     main.innerHTML = '';
     var head = h('div', { class: 'point-head' });
-    head.appendChild(h('div', { class: 'kicker' }, '考前 10 分钟看的那种'));
-    head.appendChild(h('h1', {}, '一页纸总结'));
+    head.appendChild(h('div', { class: 'kicker' }, '考前速记 · 可直接打印'));
+    head.appendChild(h('h1', {}, '一页纸速记'));
     head.appendChild(h('p', { style: 'color:var(--muted);max-width:62ch' },
-      '把一单元、一类题的知识压成一张表：口诀开头，表格中间，易错对比压轴，最后 6 道题自查。可以打印，也可以直接存成 PDF 带到学校。'));
+      '不讲整本教材，只保留考试最常查的结论、结构和易错点。选一张专题速记表，或按年级生成一份更完整的打印复习包。'));
     main.appendChild(head);
+
+    var packCta = h('a', { class: 'pack-banner', href: '#/pack' });
+    packCta.appendChild(h('div', { class: 'pack-banner-kicker' }, 'A4 打印文档'));
+    packCta.appendChild(h('b', {}, '按“学科 + 年级”生成考前复习包'));
+    packCta.appendChild(h('span', {}, '自动排版必背结论、知识骨架、易错点和速练题 →'));
+    main.appendChild(packCta);
 
     var note = h('div', { class: 'callout tip' });
     note.appendChild(h('span', { class: 'ico' }, '✓'));
-    note.appendChild(h('p', { html: '建议用法：先合上书做题，再翻表对答案；错的那一行用笔圈出来，第二天只看圈。' }));
+    note.appendChild(h('p', { html: '建议用法：<b>先盖住答案自测，再翻表核对</b>；只圈错的那一行，考前第二天只看圈。' }));
     main.appendChild(note);
 
     var groups = [['math', '数学'], ['english', '英语'], ['chinese', '语文']];
@@ -1496,11 +1725,167 @@
       if (!list.length) return;
       var sec = h('div', { class: 'sec-head', style: 'margin-top:26px' },
         h('h2', {}, g[1]),
-        h('p', {}, list.length + ' 张速查表')
+        h('p', {}, list.length + ' 张速记表')
       );
       main.appendChild(sec);
       main.appendChild(sheetGrid(list));
     });
+    setActive('cheat');
+  }
+
+  function buildPackPoint(p, index) {
+    var meta = subOf(p);
+    var sec = h('section', { class: 'pack-point s-' + meta.cls });
+    var top = h('div', { class: 'pack-point-top' });
+    top.appendChild(h('span', { class: 'pack-num' }, String(index + 1).padStart(2, '0')));
+    var titles = h('div');
+    titles.appendChild(h('h2', {}, p.title));
+    titles.appendChild(h('p', {}, gradeLabel(p.grade, p.term) + ' · ' + p.unit));
+    top.appendChild(titles);
+    sec.appendChild(top);
+
+    var must = h('div', { class: 'pack-must' });
+    must.appendChild(h('span', {}, '必背一句'));
+    must.appendChild(h('p', { html: memoryOf(p) }));
+    sec.appendChild(must);
+
+    var structure = h('div', { class: 'pack-structure' });
+    structure.appendChild(h('h3', {}, '知识骨架'));
+    var ol = h('ol');
+    (p.sections || []).slice(0, 4).forEach(function (x) {
+      var li = h('li');
+      li.appendChild(h('b', {}, x.h || '核心内容'));
+      var brief = sectionBrief(x);
+      if (brief) li.appendChild(h('span', {}, brief));
+      ol.appendChild(li);
+    });
+    structure.appendChild(ol);
+    sec.appendChild(structure);
+
+    var trap = h('div', { class: 'pack-trap' });
+    trap.appendChild(h('b', {}, '易错提醒'));
+    trap.appendChild(h('p', { html: trapOf(p) }));
+    sec.appendChild(trap);
+
+    if (p.quiz && p.quiz.length) {
+      var quiz = h('div', { class: 'pack-quiz' });
+      quiz.appendChild(h('h3', {}, '考前速练'));
+      p.quiz.slice(0, 2).forEach(function (q, qi) {
+        var item = h('div', { class: 'pack-q' });
+        item.appendChild(h('p', {}, (qi + 1) + '. ' + q.q));
+        item.appendChild(h('div', { class: 'pack-options' }, q.options.map(function (o, oi) {
+          return h('span', { class: oi === q.answer ? 'right' : '' }, String.fromCharCode(65 + oi) + '. ' + o);
+        })));
+        item.appendChild(h('p', { class: 'pack-answer' },
+          '答案：' + String.fromCharCode(65 + q.answer) + '. ' + q.options[q.answer] +
+          (q.why ? '　' + clipText(q.why, 46) : '')));
+        quiz.appendChild(item);
+      });
+      sec.appendChild(quiz);
+    }
+    return sec;
+  }
+
+  function viewPackHub() {
+    main.innerHTML = '';
+    var head = h('div', { class: 'point-head' });
+    head.appendChild(h('div', { class: 'kicker' }, '选好就打印，直接带去复习'));
+    head.appendChild(h('h1', {}, '打印复习包'));
+    head.appendChild(h('p', { style: 'color:var(--muted);max-width:64ch' },
+      '不是教材全文，而是把一册的高频考点压成一份复习文档：每页先给结论，再列知识骨架，最后放易错提醒和速练题。'));
+    main.appendChild(head);
+
+    var tip = h('div', { class: 'callout tip' });
+    tip.appendChild(h('span', { class: 'ico' }, '✓'));
+    tip.appendChild(h('p', { html: '推荐打印顺序：<b>先选年级和学科 → 浏览器打印 / 存为 PDF → 错题处用彩笔圈出</b>。' }));
+    main.appendChild(tip);
+
+    var grid = h('div', { class: 'pack-hub-grid' });
+    [1, 2, 3, 4, 5, 6].forEach(function (g) {
+      var card = h('section', { class: 'pack-choice' });
+      var top = h('div', { class: 'pack-choice-top' });
+      top.appendChild(h('span', {}, gradeLabel(g)));
+      top.appendChild(h('b', {}, POINTS.filter(function (p) { return p.grade === g; }).length + ' 个考点'));
+      card.appendChild(top);
+      card.appendChild(h('p', {}, '选择要打印的学科'));
+      var links = h('div', { class: 'pack-choice-links' });
+      ['math', 'english', 'chinese'].forEach(function (key) {
+        var meta = SUBJECTS[key];
+        var n = POINTS.filter(function (p) { return p.grade === g && p.subject === key; }).length;
+        links.appendChild(h('a', {
+          class: 'pack-subject lg-' + key,
+          href: '#/pack/' + key + '/' + g
+        }, h('span', {}, meta.name), h('b', {}, n + ' 个'), h('i', {}, '打印 →')));
+      });
+      card.appendChild(links);
+      grid.appendChild(card);
+    });
+    main.appendChild(grid);
+    setActive('cheat');
+  }
+
+  function viewPack(subject, grade) {
+    var meta = SUBJECTS[subject];
+    grade = Number(grade);
+    if (!meta || !isFinite(grade) || grade < 1 || grade > 6) return viewPackHub();
+    var list = POINTS.filter(function (p) { return p.subject === subject && p.grade === grade; });
+    main.innerHTML = '';
+
+    var doc = h('article', { class: 'pack-doc s-' + meta.cls });
+    var head = h('header', { class: 'pack-head' });
+    var title = h('div');
+    title.appendChild(h('div', { class: 'pack-kicker' }, '小课桌 · 考前速记复习包'));
+    title.appendChild(h('h1', {}, gradeLabel(grade) + ' ' + meta.name + ' · 高频考点'));
+    title.appendChild(h('p', {}, '先背结论，再看知识骨架；易错处停下重读，最后用速练题查漏。'));
+    head.appendChild(title);
+    var stamp = h('div', { class: 'pack-stamp' });
+    stamp.appendChild(h('b', {}, String(list.length)));
+    stamp.appendChild(h('span', {}, '个考点'));
+    head.appendChild(stamp);
+    doc.appendChild(head);
+
+    var tools = h('div', { class: 'pack-tools no-print' });
+    var printBtn = h('button', { class: 'btn', type: 'button' }, '打印 / 存为 PDF');
+    printBtn.addEventListener('click', function () { window.print(); });
+    tools.appendChild(printBtn);
+    tools.appendChild(h('a', { class: 'btn ghost', href: '#/pack' }, '← 换一个复习包'));
+    tools.appendChild(h('a', { class: 'btn ghost', href: '#/cheat' }, '专题一页纸速记'));
+    doc.appendChild(tools);
+
+    var guide = h('div', { class: 'pack-guide' });
+    [
+      ['1', '背一句', '先遮住后文，说出本考点最重要的一句话。'],
+      ['2', '看骨架', '顺着编号回忆每一部分，而不是从头到尾抄。'],
+      ['3', '圈易错', '只圈自己会混的地方，考前只看这些圈。']
+    ].forEach(function (x) {
+      var item = h('div');
+      item.appendChild(h('b', {}, x[0]));
+      item.appendChild(h('span', {}, x[1]));
+      item.appendChild(h('p', {}, x[2]));
+      guide.appendChild(item);
+    });
+    doc.appendChild(guide);
+
+    if (!list.length) {
+      doc.appendChild(h('p', { class: 'empty' }, '这个年级暂时没有对应考点。'));
+    } else {
+      var index = h('div', { class: 'pack-index' });
+      index.appendChild(h('b', {}, '本包目录'));
+      list.forEach(function (p, i) {
+        index.appendChild(h('span', {}, String(i + 1).padStart(2, '0') + ' ' + p.title));
+      });
+      doc.appendChild(index);
+
+      var points = h('div', { class: 'pack-points' });
+      list.forEach(function (p, i) { points.appendChild(buildPackPoint(p, i)); });
+      doc.appendChild(points);
+    }
+
+    var foot = h('footer', { class: 'pack-foot' });
+    foot.appendChild(h('span', {}, '小课桌 · ' + gradeLabel(grade) + ' ' + meta.name + '考前速记'));
+    foot.appendChild(h('span', {}, '以学校课本和老师要求为准'));
+    doc.appendChild(foot);
+    main.appendChild(doc);
     setActive('cheat');
   }
 
@@ -1514,7 +1899,7 @@
     var art = h('article', { class: 'sheet s-' + meta.cls });
 
     var head = h('header', { class: 'sheet-head' });
-    head.appendChild(h('div', { class: 'sheet-kicker' }, meta.name + ' · 一页纸总结'));
+    head.appendChild(h('div', { class: 'sheet-kicker' }, meta.name + ' · 一页纸速记'));
     head.appendChild(h('h1', {}, sh.title));
     head.appendChild(h('p', { class: 'sheet-sub' }, sh.sub));
     var tools = h('div', { class: 'sheet-tools no-print' });
@@ -1528,7 +1913,7 @@
     });
     tools.appendChild(printBtn);
     tools.appendChild(ansBtn);
-    var back = h('a', { class: 'btn sm ghost', href: '#/cheat' }, '← 全部总结');
+    var back = h('a', { class: 'btn sm ghost', href: '#/cheat' }, '← 全部速记');
     tools.appendChild(back);
     head.appendChild(tools);
     art.appendChild(head);
@@ -1636,7 +2021,7 @@
     }
 
     var foot = h('div', { class: 'sheet-foot' });
-    foot.appendChild(h('span', {}, '小课桌 · 人教版 · 4-6 年级'));
+    foot.appendChild(h('span', {}, '小课桌 · 小学 1-6 年级'));
     foot.appendChild(h('span', {}, '数值为教学简化，以课本为准'));
     art.appendChild(foot);
 
@@ -1646,6 +2031,7 @@
 
   /* ---------- 路由 ---------- */
   function router() {
+    if (challengeTimer) { clearInterval(challengeTimer); challengeTimer = null; }
     if (destroyFigure) { try { destroyFigure(); } catch (e) {} destroyFigure = null; }
     if (spy) { spy.disconnect(); spy = null; }
     var hash = location.hash.replace(/^#\/?/, '');
@@ -1655,6 +2041,8 @@
 
     if (!parts.length) viewHome();
     else if (parts[0] === 'p' && parts[1]) viewPoint(parts[1]);
+    else if (parts[0] === 'pack' && parts[1] && parts[2]) viewPack(parts[1], parts[2]);
+    else if (parts[0] === 'pack') viewPackHub();
     else if (parts[0] === 'cheat' && parts[1]) viewSheet(parts[1]);
     else if (parts[0] === 'cheat') viewCheatHub();
     else if (parts[0] === 'me') viewMe();
