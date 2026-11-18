@@ -64,8 +64,16 @@ ls -la "$SITE" | head -20
 cd /www/wwwroot/你的域名 && bash deploy/server-update.sh
 ```
 
-脚本会自动：检查有没有本地改动 → `git pull --ff-only origin main` → 修正属主/权限 → 打印版本号。
+脚本会自动：检查本地改动 → `git pull --ff-only origin main` → 修正属主/权限 → 打印版本号。
 它只做 fast-forward，不 merge、不 reset，不会悄悄覆盖任何东西。
+
+如果服务器本地改过 `deploy/deploy.sh`、`deploy/pack.sh`、`deploy/rollback.sh` 或 `deploy/server-update.sh`，脚本会先把差异备份到 `/www/xiaokedz-backups/deploy-local-时间.patch`，再恢复这几个部署脚本并继续更新。业务文件有本地改动时仍会停止，避免误覆盖线上内容。
+
+更新到本版本后，以后服务器上通常只需要这一条：
+
+```bash
+cd /www/wwwroot/你的域名 && ./deploy/server-update.sh
+```
 
 想手动更也可以：
 
@@ -79,7 +87,7 @@ chown -R www:www .
 
 - `api/config.php` 已被 `.gitignore` 排除，**服务器上的数据库密码不会被 pull 覆盖**，放心。
 - `assets/js/sync-config.js` 是**服务器部署配置**（云同步开关）。脚本会自动执行 `git update-index --skip-worktree assets/js/sync-config.js`，所以你在服务器上把 `enabled` 改成 `true` 会保留，既不会被 pull 覆盖，也不会拦住更新。
-- 其他被 git 跟踪的文件（`app.js`、`data/*.js`、`main.css` 等）**不要**在服务器上直接改，否则脚本会检测到并停止，提示你 `git stash` 或 `git checkout --`。
+- 其他被 git 跟踪的文件（`app.js`、`data/*.js`、`main.css` 等）**不要**在服务器上直接改，否则脚本会检测到并停止。
 - 宝塔自动生成的 `.user.ini`、上传的临时文件属于未跟踪文件，**不会**挡住更新（脚本只检查被跟踪文件）。
 
 ### 5. 不想用 git 了 / 想换成脚本部署

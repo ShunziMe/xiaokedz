@@ -55,16 +55,50 @@ case "$DIRTY" in
 esac
 
 if [ -n "$DIRTY" ]; then
-  echo ""
-  echo "✗ 检测到本地改动，为避免覆盖已停止更新："
-  printf '%s\n' "$DIRTY"
-  echo ""
-  echo "  处理方式（二选一）："
-  echo "    git stash && bash deploy/server-update.sh && git stash pop  # 暂存后恢复（可能与新版本冲突）"
-  echo "    git checkout -- <文件>                                      # 放弃该文件本地改动"
-  echo ""
-  echo "  推荐：服务器保持干净，改本地仓库 → git push → 再跑本脚本。"
-  exit 1
+  mapfile -t DIRTY_PATHS < <(git status --porcelain=v1 --untracked-files=no | cut -c4-)
+  DEPLOY_PATHS=()
+  OTHER_PATHS=()
+  for path in "${DIRTY_PATHS[@]}"; do
+    case "$path" in
+      deploy/deploy.sh|deploy/pack.sh|deploy/rollback.sh|deploy/server-update.sh)
+        DEPLOY_PATHS+=("$path")
+        ;;
+      *)
+        OTHER_PATHS+=("$path")
+        ;;
+    esac
+  done
+
+  if [ "${#OTHER_PATHS[@]}" -gt 0 ]; then
+    echo ""
+    echo "✗ 检测到业务文件的本地改动，为避免覆盖已停止更新："
+    printf '  %s\n' "${OTHER_PATHS[@]}"
+    echo ""
+    echo "  请先在本地修改并 push；服务器上的业务文件应保持与 Git 一致。"
+    if [ "${#DEPLOY_PATHS[@]}" -gt 0 ]; then
+      echo "  deploy/ 脚本本地改动本可自动备份，但需先处理上面的业务文件。"
+    fi
+    exit 1
+  fi
+
+  if [ "${#DEPLOY_PATHS[@]}" -gt 0 ]; then
+    BACKUP_DIR="${XK_BACKUP_DIR:-/www/xiaokedz-backups}"
+    if ! mkdir -p "$BACKUP_DIR" 2>/dev/null; then
+      BACKUP_DIR="${TMPDIR:-/tmp}/xiaokedz-backups"
+      mkdir -p "$BACKUP_DIR"
+    fi
+    BACKUP_FILE="$BACKUP_DIR/deploy-local-$(date +%Y%m%d-%H%M%S).patch"
+    git diff --binary HEAD -- "${DEPLOY_PATHS[@]}" > "$BACKUP_FILE"
+    echo "→ deploy/ 脚本有本地改动，已备份：$BACKUP_FILE"
+    git restore --source=HEAD --staged --worktree -- "${DEPLOY_PATHS[@]}"
+    echo "→ 已恢复 deploy/ 脚本到服务器当前版本，继续更新"
+    DIRTY="$(git status --porcelain --untracked-files=no)"
+    if [ -n "$DIRTY" ]; then
+      echo "✗ 恢复 deploy/ 后仍有本地改动，停止更新："
+      printf '%s\n' "$DIRTY"
+      exit 1
+    fi
+  fi
 fi
 
 echo "→ 拉取 origin/main …"
@@ -80,13 +114,13 @@ fi
 
 echo "→ 修正权限 …"
 chown -R www:www "$SITE" 2>/dev/null || true
-find "$SITE" -type d -exec chmod 755 {} \;
-find "$SITE" -type f -exec chmod 644 {} \;
+find "$SITE" -path "$SITE/.git" -prune -o -type d -exec chmod 755 {} + 2>/dev/null || true
+find "$SITE" -path "$SITE/.git" -prune -o -type f ! -name '.user.ini' -exec chmod 644 {} + 2>/dev/null || true
 if [ -f "$SITE/api/config.php" ]; then
   chown www:www "$SITE/api/config.php" 2>/dev/null || true
   chmod 600 "$SITE/api/config.php"
 fi
-chmod +x "$SITE/deploy/server-update.sh" 2>/dev/null || true
+chmod +x "$SITE"/deploy/*.sh 2>/dev/null || true
 
 echo ""
 echo "✓ 已更新到 $(git rev-parse --short HEAD) $(git log -1 --format=%s)"
